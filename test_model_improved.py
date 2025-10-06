@@ -96,16 +96,16 @@ print("\n[3] Running 1000-step simulation with market dynamics...")
 SIM_STEPS = min(1000, len(fund_data)) if data_available and len(fund_data) > 0 else 1000
 
 price_changes = []
-current_noise_std = 0.0002 # Lower baseline noise to let Speculators drive the price
+current_noise_std = 0.0008 # Lower baseline noise to let Speculators drive the price (first modification)
 volatility_shock_timer = 0
 VOLATILITY_SHOCK_DURATION = 15 # Number of steps the noise persists after the shock
+ 
 
 for t in range(SIM_STEPS):
-
     # Volatility Clustering Mechanism
     if volatility_shock_timer > 0:
-        # Shock duration: increase noise level
-        noise_std = current_noise_std * 5
+        # Shock duration: increase noise level (reduced multiplier from 5 -> 2)
+        noise_std = current_noise_std * 2
         volatility_shock_timer -= 1
     else:
         # Normal period: baseline noise
@@ -113,7 +113,6 @@ for t in range(SIM_STEPS):
 
     noise = np.random.normal(0, noise_std)
     external_shock = 0 # Reset external shock each loop
-
     # A. Long-term Fundamental Update (Fundamentalist Dynamics)
     if data_available and t < len(fund_data):
         # Extract economic indicators for the current time step
@@ -134,8 +133,8 @@ for t in range(SIM_STEPS):
 
     # B. External Shock (News Shocks)
     if t % 100 == 0 and t > 0:
-        # Large, random news shock
-        shock = np.random.choice([-0.01, 0.01])
+        # Large, random news shock (reduced amplitude to 0.5%)
+        shock = np.random.choice([-0.005, 0.005])
         print(f"\n  News shock at step {t}: {shock*100:+.1f}%")
         external_shock = shock
         # Activate volatility shock timer
