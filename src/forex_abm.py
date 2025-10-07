@@ -312,28 +312,13 @@ class Fundamentalist(Trader):
     def update_fundamental_value(self, economic_indicators: Dict):
         """Update fundamental value based on economic indicators"""
         interest_diff = economic_indicators.get('interest_diff', 0)
-        commodity_index = economic_indicators.get('commodity_index', None)
+        commodity_index = economic_indicators.get('commodity_index', 1.0)
 
-        # Apply interest differential with a small sensitivity (scale the pct change)
+        # Scale factor 0.01 is applied here as a sensitivity parameter
         self.fundamental_value *= (1 + interest_diff * 0.01)
-
-        # Properly handle commodity index updates: use percent-change with a small sensitivity
-        commodity_sensitivity = 0.02  # 2% sensitivity to commodity pct changes
-        try:
-            if commodity_index is not None:
-                # commodity_index is likely a price level (e.g., 12-100). We compute pct change
-                commodity_prev = economic_indicators.get('commodity_prev', None)
-                if commodity_prev is not None and commodity_prev != 0:
-                    commodity_pct = (commodity_index - commodity_prev) / commodity_prev
-                else:
-                    # Fallback: treat commodity_index as level and compare to a baseline of 1 unit
-                    commodity_pct = (commodity_index - 1.0) / max(1.0, commodity_index)
-
-                # Apply a small sensitivity so fundamental value moves sensibly
-                self.fundamental_value *= (1 + commodity_pct * commodity_sensitivity)
-        except Exception:
-            # If anything fails, skip commodity adjustment safely
-            pass
+        # Note: If commodity_index is 1.0 (default), this does nothing.
+        # It's assumed the commodity_index passed here is already scaled or normalized.
+        self.fundamental_value *= (commodity_index / 100)
 
     def decide_action(self, market_state: Dict) -> Order:
         """Trading based on deviation from fundamental value"""
