@@ -222,14 +222,22 @@ class ForexDataCollector:
                     return None
                 data_frames_to_merge.append(df)
 
-        # Merge on index (DatetimeIndex)
-        merged_df = reduce(lambda left, right: pd.merge(left, right, left_index=True, right_index=True, how='outer'), data_frames_to_merge)
+        # Merge on index (DatetimeIndex), anchoring to AUD dates only
+        # Root cause: outer-joining then forward-filling propagated AUD_USD_Close across
+        # dates where there was no new AUD quote, creating many zero returns.
+        # Fix: start from AUD series and left-join others so the index stays on AUD dates.
+        merged_df = data_frames_to_merge[0].copy()  # AUD base (has 'AUD_USD_Close')
+        for right in data_frames_to_merge[1:]:
+            merged_df = pd.merge(merged_df, right, left_index=True, right_index=True, how='left')
+
         merged_df = merged_df.sort_index()
 
-        # Forward-fill NaN values
-        merged_df = merged_df.ffill()
+        # Forward-fill only non-price columns; keep AUD_USD_Close as-is (no ffill)
+        non_price_cols = [c for c in merged_df.columns if c != 'AUD_USD_Close']
+        if non_price_cols:
+            merged_df[non_price_cols] = merged_df[non_price_cols].ffill()
 
-        # Drop rows where AUD_USD_Close is missing
+        # Ensure we have no missing prices (shouldn't happen with AUD base)
         merged_df = merged_df.dropna(subset=['AUD_USD_Close'])
 
         # Calculate Interest Rate Differential

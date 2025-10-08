@@ -13,9 +13,14 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from scipy import stats # Import stats explicitly for probplot
 from src.forex_abm import ForexMarket, Fundamentalist
+from utils.reproducibility import set_seed, env_info, file_sha256, save_run_metadata
 
 # Ensure the 'results/figures' directory exists before saving figures later
 os.makedirs('results/figures', exist_ok=True)
+
+# Set a deterministic seed early (can override via env var SEED)
+SEED = int(os.getenv('SEED', '42'))
+set_seed(SEED)
 
 print("="*60)
 print("Testing AUD Forex ABM Model (Advanced Dynamics)")
@@ -66,7 +71,6 @@ print(f"  Initial price: ${market.current_price:.4f}")
 
 # Give traders initial positions and capital variations
 print("  Initializing agent states...")
-np.random.seed(42)
 for i, trader in enumerate(market.traders):
     if i % 3 == 0:
         trader.position = np.random.uniform(100, 1000)
@@ -199,7 +203,7 @@ axes[0].grid(True, alpha=0.3)
 
 axes[1].plot(returns, linewidth=1, color='orange', alpha=0.6)
 axes[1].axhline(y=0, color='red', linestyle='--', alpha=0.5)
-axes[1].set_title('Daily Returns', fontsize=14, fontweight='bold')
+axes[1].set_title('Log Returns', fontsize=14, fontweight='bold')
 axes[1].set_ylabel('Log Returns', fontsize=11)
 axes[1].grid(True, alpha=0.3)
 
@@ -309,6 +313,23 @@ stats_df = pd.DataFrame({
 stats_df.to_csv('results/simulation_statistics.csv', index=False)
 print("  Saved: results/simulation_statistics.csv")
 
+# Save reproducibility metadata
+metadata = {
+    'seed': SEED,
+    'sim_steps': int(SIM_STEPS),
+    'data_available': bool(data_available),
+    'data_file': 'data/merged_data.csv',
+    'data_sha256': file_sha256('data/merged_data.csv'),
+    'env': env_info(),
+    'initial_price': float(prices[0]),
+    'final_price': float(prices[-1]),
+    'total_return': float((prices[-1] - prices[0]) / prices[0]),
+    'volatility_logret': float(returns.std()),
+    'total_trades': int(final_stats['total_trades'])
+}
+save_run_metadata('results/run_metadata.json', metadata)
+print("  Saved: results/run_metadata.json (seed, env, data hash)")
+
 # ============================================================
 # Summary
 # ============================================================
@@ -332,6 +353,7 @@ if data_available:
     print("  results/figures/real_vs_simulated.png (Real Data Comparison)")
 print("  results/improved_simulation.csv")
 print("  results/simulation_statistics.csv")
+print("  results/run_metadata.json")
 
 print("\nThe model now incorporates dynamic fundamental value and volatility clustering!")
 print("="*60)

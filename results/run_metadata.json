@@ -1,0 +1,20 @@
+{
+  "seed": 42,
+  "sim_steps": 1000,
+  "data_available": true,
+  "data_file": "data/merged_data.csv",
+  "data_sha256": "fedb0528567d89e4dd81f9004fa6619a35c543a32c17624ed1e9d2f177a5efb0",
+  "env": {
+    "python": "3.12.7 (tags/v3.12.7:0b05ead, Oct  1 2024, 03:06:41) [MSC v.1941 64 bit (AMD64)]",
+    "platform": "Windows-11-10.0.22631-SP0",
+    "numpy": "2.3.3",
+    "pandas": "2.3.3",
+    "scipy": "1.16.2",
+    "matplotlib": "3.10.6"
+  },
+  "initial_price": 0.7041757702827454,
+  "final_price": 0.7370667060075232,
+  "total_return": 0.04670841729128406,
+  "volatility_logret": 0.0012570033928130787,
+  "total_trades": 15233
+}
